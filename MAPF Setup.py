@@ -64,7 +64,7 @@ def get_positions (grid, lead_start, lead_goal):
 ##############################################################################
 
 def astar(array, start, goal):
-    neighbors = [(0, 0), (0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]
+    neighbors = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]
 
     start_node = (start, 0)
 
@@ -89,6 +89,14 @@ def astar(array, start, goal):
             return data
 
         close_set.add(current)
+
+        #Add stay at current posision option
+        neighbor = ((current[0][0], current[0][1]), current[1] + 1)
+        came_from[neighbor] = (current)
+        gscore[neighbor] = gscore[current]+1
+        fscore[neighbor] = gscore[current]+1 + heuristic(neighbor[0], goal)
+        heapq.heappush(oheap, (fscore[neighbor], neighbor))
+
         for i, j in neighbors:
 
             neighbor = ((current[0][0] + i, current[0][1] + j), current[1]+1)
