@@ -17,13 +17,14 @@ We will build the 'def heuristic(a, b):' to use:
   1. manhattan distance
   2. octile distance
   3. Enhanced Partial Expansion A* - Operator Selection Function (OSF) (The Challenge: to build an effective OSF)
+      
       Advantages
-                  Saves memory
-                  Does not generate surlplus nodes
-                  Generates every node only once
+                  1. Saves memory
+                  2. Does not generate surlplus nodes
+                  3. Generates every node only once
 
       Disadvantages
-                  OSF and EPEA* are domain dependent
-                  Sometimes not applicable
-                  OSF incurs extra time/memory overhead
+                  1. OSF and EPEA* are domain dependent
+                  2. Sometimes not applicable
+                  3. OSF incurs extra time/memory overhead
 
