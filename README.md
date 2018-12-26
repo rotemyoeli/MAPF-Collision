@@ -18,7 +18,8 @@ Next we will build a 'Collision maximizer' to do the following:
 We will build the 'def heuristic(a, b):' to use:
   1. manhattan distance
   2. octile distance
-  3. Enhanced Partial Expansion A* - Operator Selection Function (OSF) (The Challenge: to build an effective OSF)
+  3. WA*
+  4. Enhanced Partial Expansion A* - Operator Selection Function (OSF) (The Challenge: to build an effective OSF)
       
       Advantages
                   1. Saves memory
