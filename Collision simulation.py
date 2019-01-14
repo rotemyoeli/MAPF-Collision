@@ -1,6 +1,28 @@
 import numpy as np
 import heapq
 import matplotlib.pyplot as plt
+import ast
+import math
+import pandas as pd
+def parse_tuple(string):
+    try:
+        s = ast.literal_eval(str(string))
+        if type(s) == tuple:
+            return s
+        return
+    except:
+        return
+
+def convert_pathes_to_routes(df_pathes):
+    optimal_routes =[]
+    #Iterate over each column
+    for col_idx in range(df_pathes.shape[1]):
+        route_list = list()
+        for row_idx in range(df_pathes.shape[0]):
+            if isinstance(parse_tuple(df_pathes.values[row_idx,col_idx]),tuple):
+                route_list.append(parse_tuple(df_pathes.values[row_idx,col_idx]))
+        optimal_routes.append(route_list)
+    return optimal_routes
 
 
 route = []
@@ -24,9 +46,13 @@ ax.imshow(grid, cmap=plt.cm.ocean)
 
 
 
-route = [[((10, 10), 0), ((10, 11), 1), ((10, 12), 2), ((10, 13), 3), ((10, 14), 4), ((10, 15), 5), ((10, 16), 6), ((10, 17), 7)],
-         [((11, 10), 0), ((11, 11), 1), ((11, 12), 2), ((11, 13), 3), ((11, 14), 4), ((11, 15), 5), ((11, 16), 6), ((11, 17), 7)],
-         [((12, 10), 0), ((12, 11), 1), ((12, 12), 2), ((12, 13), 3), ((12, 14), 4), ((12, 15), 5), ((12, 16), 6), ((12, 17), 7)]]
+#route = [[((10, 10), 0), ((10, 11), 1), ((10, 12), 2), ((10, 13), 3), ((10, 14), 4), ((10, 15), 5), ((10, 16), 6), ((10, 17), 7)],
+#         [((11, 10), 0), ((11, 11), 1), ((11, 12), 2), ((11, 13), 3), ((11, 14), 4), ((11, 15), 5), ((11, 16), 6), ((11, 17), 7)],
+#         [((12, 10), 0), ((12, 11), 1), ((12, 12), 2), ((12, 13), 3), ((12, 14), 4), ((12, 15), 5), ((12, 16), 6), ((12, 17), 7)]]
+
+df_optimal_pathes = pd.read_csv("Results.csv")
+route = convert_pathes_to_routes(df_optimal_pathes)
+
 
 ##############################################################################
 # heuristic function for path scoring
@@ -42,7 +68,7 @@ def heuristic(a, b):
 
 def astar(array, start, goal, y):
     neighbors = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]
-
+    print("Re-calculation A-star algorithm")
     start_node = (start)
 
     close_set = set()
@@ -161,6 +187,7 @@ def apply(action, node, step):
         #If action of Agent 0 is according the plan - don't decrease k
         if route[0][step][0] == (node[0][0][0] + action[0], node[0][0][1] + action[1]):
             for x in range(0, len(route)):
+                print(str(x)+" "+ str(step)+" ")
                 pos.append(route[x][step][0])
             tmp_node = (pos, k, step)
             return tmp_node
@@ -186,6 +213,7 @@ def calc_new_routes(action, node, step):
             # If interrupt - update plan using A* for all agents
             if tmp_node[0] == route[x][step][0] and k > 0:
                 agent_that_interrupt = x
+                print("agent: "+str(agent_that_interrupt)+" interrupted. attacker moved: "+str(node)+" step "+ str(step))
                 for a in range(0, len(route)-1):
                     if a == 0:
                         if step >= len(route[a]):

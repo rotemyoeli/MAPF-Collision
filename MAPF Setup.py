@@ -186,12 +186,9 @@ for x in range(0, num_of_agents):
     ax.scatter(goal[1], goal[0], marker="*", color="purple", s=50)
     ax.plot(y_coords, x_coords, color="blue")
 
-#Write to Excel
+#Write to csv
 df_res = pd.DataFrame(route)
 df_res = df_res.T
-writer_xl = pd.ExcelWriter('Results.xlsx', engine='openpyxl')
-df_res.to_excel(writer_xl, sheet_name='Agents', index=False)
-writer_xl.save()
-writer_xl.close()
 
+df_res.to_csv('Results.csv',index=False)
 plt.show()
