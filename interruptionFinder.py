@@ -111,10 +111,10 @@ class InterruptionFinder(object):
 
         return tmp_node, route
 
-    def is_goal(self, node, route):
+    def is_goal(self, node):
 
         for x in range(0, len(node.pos)):
-            if node.pos[x] is not route[x][-1][0] and node.pos[x] is not None:
+            if node.pos[x] is not self.goal_pos[x] and node.pos[x] is not None:
                 return False
         return True
 
@@ -139,7 +139,7 @@ class InterruptionFinder(object):
     '''
      route = list containing the planned route for each agent 
     '''
-    def search_for_interrupt_plan(self, grid, k, route, timeout):
+    def search_for_interrupt_plan(self, grid, k, original_routes, timeout):
         self.k = k
         self.grid = grid
         start_time = time.time()
@@ -147,21 +147,24 @@ class InterruptionFinder(object):
         actions = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1), (0, 0)]
         # actions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
         open = []
-        pos = list()
         step = 0
 
+        num_of_agents = len(original_routes)
+
         # Set starting positions for all agents into a node
-        for x in range(0, len(route)):
-            pos.append(route[x][0][0])
+        self.start_pos = [original_routes[x][0][0] for x in range(0, num_of_agents)]
+
+        # Compute the goal positions
+        self.goal_pos = [original_routes[x][-1][0] for x in range(0, num_of_agents)]
 
         # pos = a list that contains location of all agents
         # k = number of allowed abnormal moves
         # step = current time step
         # None = the parent pointer
 
-        start = Node(pos=pos, k=k, step=step, parent=None, route=route)
+        start = Node(pos=self.start_pos, k=k, step=step, parent=None, route=original_routes)
 
-        f_score = self.f_interrupt(start, route)
+        f_score = self.f_interrupt(start, original_routes)
         fscore = {start: f_score}
         heapq.heappush(open, (fscore[start], start))
 
@@ -170,7 +173,7 @@ class InterruptionFinder(object):
         while (len(open) > 0):
             # Check for timeout
             if (time.time() - start_time) > timeout:
-                return (0, route, total_expanded_nodes, 1)
+                return (0, original_routes, total_expanded_nodes, 1)
 
             node = heapq.heappop(open)[1]
             # count total expanded nodes
@@ -180,20 +183,14 @@ class InterruptionFinder(object):
             # No need to expand a node that cannot improve the best goal
             if self.f_interrupt(node, node.route) <= best_goal_value:
                 continue
-            if self.is_goal(node, node.route):
+            if self.is_goal(node):
                 continue
             # print("%d" % (len(goals)))
             for action in actions:
 
                 # calc the vector between start and goal
-                goal_radians = math.atan2(route[0][-1][0][1] - node.pos[0][1], route[0][-1][0][0] - node.pos[0][0])
-                goal_degrees = math.degrees(goal_radians)
+                anglediff = self.compute_anglediff_to_goal(action, node, original_routes)
 
-                next_step_radians = math.atan2((node.pos[0][1] + action[1]) - node.pos[0][1],
-                                               (node.pos[0][0] + action[0]) - node.pos[0][0])
-                next_step_degrees = math.degrees(next_step_radians)
-
-                anglediff = (next_step_degrees - goal_degrees + 180 + 360) % 360 - 180
                 # print(anglediff, next_step_degrees, goal_degrees)
                 if (anglediff >= 90 or anglediff <= -90):
                     continue
@@ -218,7 +215,7 @@ class InterruptionFinder(object):
                         if cost_new_node > best_goal_value:
                             best_goal_value = cost_new_node
                     else:
-                        f_score = self.f_interrupt(new_node, route)
+                        f_score = self.f_interrupt(new_node, original_routes)
                         fscore[new_node] = f_score + node.step + (np.random.random() / 1)
                         heapq.heappush(open, (fscore[new_node], new_node))
 
@@ -229,16 +226,11 @@ class InterruptionFinder(object):
                     # array bound 1 on map
                     continue
                 # if action of agent 0 is collide in other agent location, ignore action
-                collision_with_exist_agent = False
-                for agent in range(1, len(node.route)):
-                    if node.pos[0][0] + action[0] == node.pos[agent][0] and node.pos[0][1] + action[1] == node.pos[agent][
-                        1]:
-                        collision_with_exist_agent = True
-                        break
+                collision_with_exist_agent = self.is_colliding(action, node)
                 if collision_with_exist_agent:
                     continue
                 new_node, _ = self.apply(action, node, step, node.route)
-                if new_node == None:
+                if new_node == None: # TODO: When does this occur?
                     continue
                 if (self.is_goal(new_node, new_node.route)):
                     goals.append(new_node)
@@ -271,4 +263,30 @@ class InterruptionFinder(object):
             parent = parent.parent
 
         # solution = list(reversed(solution))
-        return(solution, route, total_expanded_nodes, 0)
+        return(solution, original_routes, total_expanded_nodes, 0)
+
+
+    '''
+        Checks if performing the action in the given node will create a collision with another agent
+        if all agents' follow their current routes.
+    '''
+    def is_colliding(self, action, node):
+        collision_with_exist_agent = False
+        for agent in range(1, len(node.route)):
+            if node.pos[0][0] + action[0] == node.pos[agent][0] and node.pos[0][1] + action[1] == node.pos[agent][
+                1]:
+                collision_with_exist_agent = True
+                break
+        return collision_with_exist_agent
+
+    '''
+    Computes the different between the angle to the goal and the angle taken by the proposed action.
+    '''
+    def compute_anglediff_to_goal(self, action, node, route):
+        goal_radians = math.atan2(route[0][-1][0][1] - node.pos[0][1], route[0][-1][0][0] - node.pos[0][0])
+        goal_degrees = math.degrees(goal_radians)
+        next_step_radians = math.atan2((node.pos[0][1] + action[1]) - node.pos[0][1],
+                                       (node.pos[0][0] + action[0]) - node.pos[0][0])
+        next_step_degrees = math.degrees(next_step_radians)
+        anglediff = (next_step_degrees - goal_degrees + 180 + 360) % 360 - 180
+        return anglediff
