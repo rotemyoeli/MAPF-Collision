@@ -60,7 +60,7 @@ ax.imshow(grid, cmap=plt.cm.ocean)
 #    df.to_csv(out, index=False)
 
 
-path = 'C:\\Users\\rotem\\Dropbox\\Studies\\Thesis\\Code\\Ver 2.0\\data\\'
+path = 'data\\'
 extension = 'csv'
 os.chdir(path)
 files = [i for i in glob.glob('*.{}'.format(extension))]
