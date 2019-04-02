@@ -513,8 +513,7 @@ def main():
     #    df = df.drop([first_column], axis=1)
     #    df.to_csv(out, index=False)
 
-
-    path = 'room1\\'
+    path = 'room1'
     extension = 'csv'
     os.chdir(path)
     files = [i for i in glob.glob('*.{}'.format(extension))]
